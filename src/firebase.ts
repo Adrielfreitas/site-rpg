@@ -107,13 +107,13 @@ export function watchSession(campaignId: string, onTokens: (tokens: Token[]) => 
   let cancelled = false
   void getClient().then(async ({ db }) => {
     if (cancelled) return
-    const { onValue, ref } = await import('firebase/database')
+    const { limitToLast, onValue, query, ref } = await import('firebase/database')
     if (cancelled) return
     unsubscribeTokens = onValue(ref(db, `campaigns/${campaignId}/tokens`), (snapshot) => {
       const data = snapshot.val() as Record<string, Token> | null
       if (data) onTokens(Object.values(data))
     })
-    unsubscribeMessages = onValue(ref(db, `campaigns/${campaignId}/messages`), (snapshot) => {
+    unsubscribeMessages = onValue(query(ref(db, `campaigns/${campaignId}/messages`), limitToLast(30)), (snapshot) => {
       const data = snapshot.val() as Record<string, { text: string; author: string; createdAt: number }> | null
       if (data) onMessages(Object.values(data).sort((a, b) => a.createdAt - b.createdAt).slice(-30).map((item) => `${item.author}: ${item.text}`))
     })
