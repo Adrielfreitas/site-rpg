@@ -1,0 +1,46 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "campaigns": {
+      "$campaignId": {
+        ".read": "auth != null && data.child('members').child(auth.uid).exists()",
+        ".write": "auth != null && !data.exists() && newData.child('meta').child('ownerUid').val() == auth.uid && newData.child('members').child(auth.uid).child('role').val() == 'Mestre'",
+        "meta": {
+          ".write": "auth != null && data.parent().child('meta').child('ownerUid').val() == auth.uid"
+        },
+        "members": {
+          "$uid": {
+            ".read": "auth != null && (auth.uid == $uid || data.parent().parent().child('members').child(auth.uid).exists())",
+            ".write": "auth != null && auth.uid == $uid && !data.exists() && newData.child('role').val() == 'Jogador' && root.child('invites').child(newData.child('inviteCode').val()).child('campaignId').val() == $campaignId"
+          }
+        },
+        "tokens": {
+          "$tokenId": {
+            ".write": "auth != null && data.parent().parent().child('members').child(auth.uid).exists()"
+          }
+        },
+        "messages": {
+          "$messageId": {
+            ".write": "auth != null && !data.exists() && newData.child('authorUid').val() == auth.uid && newData.child('text').isString() && newData.child('text').val().length <= 500 && data.parent().parent().child('members').child(auth.uid).exists()"
+          }
+        }
+      }
+    },
+    "invites": {
+      "$inviteCode": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && root.child('campaigns').child(newData.child('campaignId').val()).child('meta').child('ownerUid').val() == auth.uid) || data.child('ownerUid').val() == auth.uid)",
+        ".validate": "newData.hasChildren(['campaignId', 'inviteCode', 'ownerUid', 'name', 'setting']) && newData.child('inviteCode').val() == $inviteCode"
+      }
+    },
+    "userCampaigns": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        "$campaignId": {
+          ".write": "auth != null && auth.uid == $uid && newData.val() == true && root.child('campaigns').child($campaignId).child('members').child($uid).exists()"
+        }
+      }
+    }
+  }
+}
